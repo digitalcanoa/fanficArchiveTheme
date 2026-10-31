@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{Title}{block:PostTitle} — {PostTitle}{/block:PostTitle}</title>
+  <link rel="shortcut icon" href="{Favicon}">
+  <link rel="alternate" type="application/rss+xml" href="{RSS}">
+  <meta name="description" content="{MetaDescription}">
+
+  <!-- Theme options (Customize → Edit theme) -->
+  <meta name="color:Light Background" content="#fafaf9">
+  <meta name="color:Light Text" content="#1c1c1c">
+  <meta name="color:Light Accent" content="#3b5bdb">
+  <meta name="color:Dark Background" content="#111113">
+  <meta name="color:Dark Text" content="#e8e8e6">
+  <meta name="color:Dark Accent" content="#8da2fb">
+  <meta name="image:Sidebar Photo" content="">
+  <!-- Filter Tags: comma-separated list of the tags that can be picked in the filter.
+       Example: art, writing, personal.  Leave empty to list every tag found on the page. -->
+  <meta name="text:Filter Tags" content="">
+  <meta name="text:Link 1 Label" content="">
+  <meta name="text:Link 1 URL" content="">
+  <meta name="text:Link 2 Label" content="">
+  <meta name="text:Link 2 URL" content="">
+  <meta name="text:Link 3 Label" content="">
+  <meta name="text:Link 3 URL" content="">
+  <meta name="text:Link 4 Label" content="">
+  <meta name="text:Link 4 URL" content="">
+
+  <!-- Apply the saved theme before first paint (avoids flashing) -->
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('theme');
+        if (!t) t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', t);
+      } catch (e) {}
+    })();
+  </script>
+
+  <style>
+    :root {
+      --bg: {color:Light Background};
+      --fg: {color:Light Text};
+      --accent: {color:Light Accent};
+      --muted: color-mix(in srgb, var(--fg) 55%, var(--bg));
+      --line: color-mix(in srgb, var(--fg) 12%, var(--bg));
+      --soft: color-mix(in srgb, var(--fg) 5%, var(--bg));
+    }
+    html[data-theme="dark"] {
+      --bg: {color:Dark Background};
+      --fg: {color:Dark Text};
+      --accent: {color:Dark Accent};
+    }
+
+    * { box-sizing: border-box; }
+    html { color-scheme: light; }
+    html[data-theme="dark"] { color-scheme: dark; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      transition: background .2s, color .2s;
+    }
+    a { color: inherit; text-decoration: none; }
+    a:hover { color: var(--accent); }
+    img { max-width: 100%; height: auto; display: block; }
+
+    .wrap { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
+
+    /* ---------- Header ---------- */
+    .site-header { position: relative; text-align: center; padding: 56px 0 36px; }
+    .site-header h1 { margin: 0; font-size: 1.9rem; font-weight: 600; letter-spacing: -.02em; }
+    .site-header p { margin: .5rem auto 0; max-width: 46ch; color: var(--muted); font-size: .95rem; }
+
+    .theme-toggle {
+      position: absolute; top: 20px; right: 0;
+      width: 36px; height: 36px; padding: 0;
+      display: grid; place-items: center;
+      background: transparent; color: var(--muted);
+      border: 1px solid var(--line); border-radius: 50%;
+      cursor: pointer; transition: color .15s, border-color .15s;
+    }
+    .theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+
+    /* ---------- Layout ---------- */
+    .layout {
+      display: grid;
+      grid-template-columns: 190px minmax(0, 1fr) 270px;
+      gap: 44px;
+      align-items: start;
+      padding-bottom: 80px;
+    }
+    .sidebar { position: sticky; top: 24px; font-size: .92rem; }
+    .filter { position: sticky; top: 24px; max-height: calc(100vh - 48px); overflow-y: auto; font-size: .88rem; }
+    .main { width: 100%; max-width: 620px; margin: 0 auto; }
+
+    /* ---------- Sidebar ---------- */
+    .avatar { width: 112px; height: 112px; border-radius: 50%; object-fit: cover; margin-bottom: 20px; background: var(--soft); }
+    .side-links { list-style: none; margin: 0; padding: 0; }
+    .side-links li { margin: 0 0 6px; }
+    .side-links a { color: var(--muted); }
+    .side-links a:hover { color: var(--accent); }
+
+    /* ---------- "Sort and filter" panel (AO3-style) ---------- */
+    .filter-panel { border: 1px solid var(--line); border-radius: 8px; }
+    .filter-panel > summary {
+      list-style: none; cursor: pointer; padding: 12px 14px;
+      font-size: .74rem; font-weight: 600; letter-spacing: .08em;
+      text-transform: uppercase; color: var(--muted);
+    }
+    .filter-panel > summary::-webkit-details-marker { display: none; }
+    .filter-panel > summary::after { content: "−"; float: right; }
+    .filter-panel:not([open]) > summary::after { content: "+"; }
+    .filter-panel[open] > summary { border-bottom: 1px solid var(--line); }
+
+    #filter-form { display: grid; gap: 18px; padding: 14px; }
+    #filter-form fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
+    #filter-form legend, #filter-form .legend {
+      display: block; padding: 0; margin: 0 0 8px;
+      font-size: .78rem; font-weight: 600; color: var(--fg);
+    }
+
+    .f-control {
+      width: 100%; font: inherit; font-size: .85rem; padding: 7px 9px;
+      background: var(--bg); color: var(--fg);
+      border: 1px solid var(--line); border-radius: 6px;
+    }
+    .f-control:focus, .chips-box:focus-within { outline: 2px solid var(--accent); outline-offset: -1px; }
+
+    /* Include / Exclude columns */
+    .facet-head, .facet li {
+      display: grid; grid-template-columns: 40px 40px minmax(0, 1fr);
+      align-items: center; column-gap: 4px;
+    }
+    .facet-head { font-size: .66rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); text-align: center; margin-bottom: 4px; }
+    .facet { list-style: none; margin: 0; padding: 0; }
+    .facet li { padding: 3px 0; border-top: 1px solid var(--line); }
+    .facet li:first-child { border-top: 0; }
+    .facet li input { justify-self: center; margin: 0; width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; }
+    .facet li input.cb-ex { accent-color: #c0392b; }
+    .f-label { padding-left: 6px; overflow-wrap: anywhere; color: var(--fg); }
+    .f-label small { color: var(--muted); font-size: .9em; }
+    #facet-tags li.extra { display: none; }
+    #facet-tags.expanded li.extra { display: grid; }
+    .more-btn { margin-top: 8px; padding: 0; font: inherit; font-size: .82rem; background: none; border: 0; color: var(--muted); cursor: pointer; }
+    .more-btn:hover { color: var(--accent); }
+
+    /* Tag input (chips) */
+    .chips-box {
+      display: flex; flex-wrap: wrap; gap: 5px; padding: 5px;
+      background: var(--bg); border: 1px solid var(--line); border-radius: 6px;
+    }
+    .chips-box input { flex: 1; min-width: 90px; border: 0; outline: 0; background: transparent; color: var(--fg); font: inherit; font-size: .85rem; padding: 3px 4px; }
+    .chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 4px 2px 8px; font-size: .8rem; background: var(--soft); border: 1px solid var(--line); border-radius: 999px; }
+    .chip button { padding: 0 4px; font: inherit; line-height: 1; background: none; border: 0; color: var(--muted); cursor: pointer; }
+    .chip button:hover { color: var(--accent); }
+    .chips-box.ex .chip { border-color: #c0392b; }
+
+    .f-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .btn {
+      font: inherit; font-size: .85rem; padding: 8px 14px; cursor: pointer;
+      background: transparent; color: var(--fg);
+      border: 1px solid var(--line); border-radius: 6px; transition: all .15s;
+    }
+    .btn:hover { border-color: var(--accent); color: var(--accent); }
+    .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--bg); font-weight: 600; }
+    .btn.primary:hover { opacity: .9; color: var(--bg); }
+    .f-hint { margin: 0; font-size: .76rem; color: var(--muted); line-height: 1.5; }
+
+    /* Results summary */
+    .results { margin: 0 0 28px; padding-bottom: 14px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: .88rem; }
+    .results strong { color: var(--fg); }
+    .results a { display: inline-block; margin-left: 10px; color: var(--accent); }
+    .results[hidden] { display: none; }
+
+    /* ---------- Posts ---------- */
+    .page-note { margin: 0 0 32px; color: var(--muted); font-size: .9rem; }
+    .post { margin: 0 0 40px; padding-bottom: 40px; border-bottom: 1px solid var(--line); }
+    .post[hidden] { display: none; }
+    .post-title { margin: 0 0 14px; font-size: 1.45rem; line-height: 1.3; font-weight: 600; letter-spacing: -.01em; }
+    .post-body { overflow-wrap: break-word; }
+    .post-body > :first-child { margin-top: 0; }
+    .post-body > :last-child { margin-bottom: 0; }
+    .post-body p { margin: 0 0 1em; }
+    .post-body a { color: var(--accent); }
+    .post-body a:hover { text-decoration: underline; }
+    .post-body img, .post-body video { border-radius: 4px; }
+    .post-body iframe { max-width: 100%; border: 0; }
+    .post-body figure { margin: 1em 0; }
+    .post blockquote {
+      margin: 1em 0; padding: 0 0 0 16px;
+      border-left: 2px solid var(--line); color: var(--muted);
+    }
+    .photo-set { display: grid; gap: 8px; }
+    .photo-set img { width: 100%; }
+    .post-photo img { width: 100%; border-radius: 4px; }
+    .caption { margin-top: 14px; }
+
+    .quote-post blockquote { margin: 0; padding: 0; border: 0; color: var(--fg); font-size: 1.35rem; line-height: 1.45; }
+    .quote-post cite { display: block; margin-top: 10px; color: var(--muted); font-size: .9rem; font-style: normal; }
+    .link-post > a { font-size: 1.3rem; font-weight: 600; }
+    .chat-line { margin: 0 0 4px; }
+    .chat-line b { font-weight: 600; margin-right: 6px; }
+    .ask-q { margin: 0 0 16px; padding: 12px 14px; background: var(--soft); border-radius: 6px; font-size: .95rem; }
+    .ask-q strong { display: block; font-size: .8rem; color: var(--muted); font-weight: 500; }
+
+    .post-footer {
+      margin-top: 18px; display: flex; flex-wrap: wrap; gap: 6px 16px;
+      align-items: baseline; font-size: .82rem; color: var(--muted);
+    }
+    .post-footer a { color: var(--muted); }
+    .post-footer a:hover { color: var(--accent); }
+    .post-tags { display: flex; flex-wrap: wrap; gap: 4px 10px; }
+    .notes { margin-top: 24px; font-size: .9rem; color: var(--muted); }
+    .notes ol { padding-left: 1.2em; }
+
+    .pagination { display: flex; justify-content: space-between; font-size: .9rem; color: var(--muted); }
+
+    /* ---------- Responsive ---------- */
+    @media (max-width: 1020px) {
+      .layout { grid-template-columns: 1fr; gap: 28px; }
+      .sidebar, .filter { position: static; max-height: none; overflow: visible; }
+      .sidebar { text-align: center; }
+      .avatar { margin: 0 auto 14px; width: 88px; height: 88px; }
+      .side-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 18px; }
+      .side-links li { margin: 0; }
+      .filter { order: 2; }
+      .main { order: 3; }
+      .site-header { padding-top: 64px; }
+    }
+
+    {CustomCSS}
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+
+    <!-- ===== HEADER ===== -->
+    <header class="site-header">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"/>
+          <path d="M12 3v18" />
+          <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/>
+        </svg>
+      </button>
+      <h1><a href="/">{Title}</a></h1>
+      {block:Description}<p>{Description}</p>{/block:Description}
+    </header>
+
+    <div class="layout">
+
+      <!-- ===== SIDEBAR (left) ===== -->
+      <aside class="sidebar">
+        {block:IfSidebarPhoto}<img class="avatar" src="{image:Sidebar Photo}" alt="{Title}">{/block:IfSidebarPhoto}
+        {block:IfNotSidebarPhoto}<img class="avatar" src="{PortraitURL-128}" alt="{Title}">{/block:IfNotSidebarPhoto}
+
+        <ul class="side-links">
+          <li><a href="/">Home</a></li>
+          <li><a href="/archive">Archive</a></li>
+          {block:HasPages}{block:Pages}<li><a href="{URL}">{Label}</a></li>{/block:Pages}{/block:HasPages}
+          {block:AskEnabled}<li><a href="/ask">{AskLabel}</a></li>{/block:AskEnabled}
+          {block:IfLink1Label}<li><a href="{text:Link 1 URL}">{text:Link 1 Label}</a></li>{/block:IfLink1Label}
+          {block:IfLink2Label}<li><a href="{text:Link 2 URL}">{text:Link 2 Label}</a></li>{/block:IfLink2Label}
+          {block:IfLink3Label}<li><a href="{text:Link 3 URL}">{text:Link 3 Label}</a></li>{/block:IfLink3Label}
+          {block:IfLink4Label}<li><a href="{text:Link 4 URL}">{text:Link 4 Label}</a></li>{/block:IfLink4Label}
+          <li><a href="{RSS}">RSS</a></li>
+        </ul>
+      </aside>
+
+      <!-- ===== POSTS (center) ===== -->
+      <main class="main">
+        {block:TagPage}<p class="page-note">Posts tagged #{Tag}</p>{/block:TagPage}
+        {block:SearchPage}<p class="page-note">Results for “{SearchQuery}”</p>{/block:SearchPage}
+        <p class="results" id="results" hidden></p>
+
+        {block:Posts}
+        <article class="post" id="post-{PostID}"
+                 data-type="{block:Text}text{/block:Text}{block:Photo}photo{/block:Photo}{block:Photoset}photo{/block:Photoset}{block:Quote}quote{/block:Quote}{block:Link}link{/block:Link}{block:Chat}chat{/block:Chat}{block:Audio}audio{/block:Audio}{block:Video}video{/block:Video}{block:Answer}answer{/block:Answer}"
+                 data-ts="{Timestamp}"
+                 data-notes="{block:NoteCount}{NoteCount}{/block:NoteCount}">
+
+          {block:Text}
+            {block:Title}<h2 class="post-title"><a href="{Permalink}">{Title}</a></h2>{/block:Title}
+            <div class="post-body">{Body}</div>
+          {/block:Text}
+
+          {block:Photo}
+            <div class="post-photo">
+              {block:LinkURL}<a href="{LinkURL}">{/block:LinkURL}
+              <img src="{PhotoURL-HighRes}" alt="{PhotoAlt}" loading="lazy">
+              {block:LinkURL}</a>{/block:LinkURL}
+            </div>
+            {block:Caption}<div class="caption post-body">{Caption}</div>{/block:Caption}
+          {/block:Photo}
+
+          {block:Photoset}
+            <div class="photo-set">
+              {block:Photos}<img src="{PhotoURL-HighRes}" alt="" loading="lazy">{/block:Photos}
+            </div>
+            {block:Caption}<div class="caption post-body">{Caption}</div>{/block:Caption}
+          {/block:Photoset}
+
+          {block:Quote}
+            <div class="quote-post">
+              <blockquote>{Quote}</blockquote>
+              {block:Source}<cite>{Source}</cite>{/block:Source}
+            </div>
+          {/block:Quote}
+
+          {block:Link}
+            <div class="link-post">
+              <a href="{URL}" {Target}>{Name} ↗</a>
+              {block:Description}<div class="post-body" style="margin-top:10px">{Description}</div>{/block:Description}
+            </div>
+          {/block:Link}
+
+          {block:Chat}
+            {block:Title}<h2 class="post-title">{Title}</h2>{/block:Title}
+            <div class="post-body">
+              {block:Lines}<p class="chat-line">{block:Label}<b>{Label}</b>{/block:Label}{Line}</p>{/block:Lines}
+            </div>
+          {/block:Chat}
+
+          {block:Audio}
+            {AudioPlayerGrey}
+            {block:Caption}<div class="caption post-body">{Caption}</div>{/block:Caption}
+          {/block:Audio}
+
+          {block:Video}
+            <div class="post-body">{Video-500}</div>
+            {block:Caption}<div class="caption post-body">{Caption}</div>{/block:Caption}
+          {/block:Video}
+
+          {block:Answer}
+            <div class="ask-q"><strong>{Asker} asked</strong>{Question}</div>
+            <div class="post-body">{Answer}</div>
+          {/block:Answer}
+
+          <footer class="post-footer">
+            {block:Date}<a href="{Permalink}"><time datetime="{Year}-{MonthNumberWithZero}-{DayOfMonthWithZero}">{ShortMonth} {DayOfMonth}, {Year}</time></a>{/block:Date}
+            {block:NoteCount}<a href="{Permalink}">{NoteCountWithLabel}</a>{/block:NoteCount}
+            {block:HasTags}
+            <span class="post-tags">{block:Tags}<a href="{TagURL}" data-tag="{URLSafeTag}">#{Tag}</a>{/block:Tags}</span>
+            {/block:HasTags}
+          </footer>
+
+          {block:PermalinkPage}
+            {block:PostNotes}<div class="notes">{PostNotes}</div>{/block:PostNotes}
+          {/block:PermalinkPage}
+        </article>
+        {/block:Posts}
+
+        {block:Pagination}
+        <nav class="pagination">
+          <span>{block:PreviousPage}<a href="{PreviousPage}">← Newer</a>{/block:PreviousPage}</span>
+          <span>{block:NextPage}<a href="{NextPage}">Older →</a>{/block:NextPage}</span>
+        </nav>
+        {/block:Pagination}
+      </main>
+
+      <!-- ===== SORT AND FILTER (right, AO3-style) ===== -->
+      <aside class="filter">
+        {block:IndexPage}
+        <!-- Tags chosen in the "Filter Tags" theme option (read by the script below) -->
+        <div id="filter-config" hidden>{text:Filter Tags}</div>
+
+        <details class="filter-panel" id="filter-panel" open>
+          <summary>Sort and filter</summary>
+
+          <form id="filter-form" autocomplete="off">
+
+            <fieldset>
+              <label class="legend" for="f-sort">Sort by</label>
+              <select id="f-sort" class="f-control">
+                <option value="new">Date (newest)</option>
+                <option value="old">Date (oldest)</option>
+                <option value="notes">Notes (most notes)</option>
+              </select>
+            </fieldset>
+
+            <fieldset id="fs-type">
+              <legend>Post type</legend>
+              <div class="facet-head"><span>Include</span><span>Exclude</span><span></span></div>
+              <ul class="facet" id="facet-type"></ul>
+            </fieldset>
+
+            <fieldset id="fs-tags">
+              <legend>Tags</legend>
+              <div class="facet-head"><span>Include</span><span>Exclude</span><span></span></div>
+              <ul class="facet" id="facet-tags"></ul>
+              <button type="button" class="more-btn" id="more-tags" hidden>More tags</button>
+            </fieldset>
+
+            <fieldset id="fs-other-in">
+              <legend>Other tags to include</legend>
+              <div class="chips-box in" id="chips-in"><input type="text" list="tag-suggestions" placeholder="Type a tag" aria-label="Other tags to include"></div>
+            </fieldset>
+
+            <fieldset id="fs-other-ex">
+              <legend>Other tags to exclude</legend>
+              <div class="chips-box ex" id="chips-ex"><input type="text" list="tag-suggestions" placeholder="Type a tag" aria-label="Other tags to exclude"></div>
+            </fieldset>
+            <datalist id="tag-suggestions"></datalist>
+
+            <fieldset>
+              <label class="legend" for="f-q">Search within results</label>
+              <input type="search" id="f-q" class="f-control">
+            </fieldset>
+
+            <div class="f-actions">
+              <button type="submit" class="btn primary">Sort and filter</button>
+              <button type="button" class="btn" id="f-clear">Clear filters</button>
+            </div>
+            <p class="f-hint">Filters the posts loaded on this page. To browse the whole blog by tag, use the link that appears in the results.</p>
+          </form>
+        </details>
+        {/block:IndexPage}
+      </aside>
+
+    </div>
+  </div>
+
+  <script>
+    /* ---------- Light / dark toggle ---------- */
+    (function () {
+      var btn = document.getElementById('theme-toggle');
+      if (!btn) return;
+      btn.addEventListener('click', function () {
+        var next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        try { localStorage.setItem('theme', next); } catch (e) {}
+      });
+    })();
+
+    /* ---------- Sort and filter (AO3-style) ---------- */
+    (function () {
+      var form = document.getElementById('filter-form');
+      if (!form) return;
+
+      var panel = document.getElementById('filter-panel');
+      var results = document.getElementById('results');
+      var pagination = document.querySelector('.pagination');
+      var posts = [].slice.call(document.querySelectorAll('.post'));
+      var mobile = window.matchMedia('(max-width: 1020px)');
+      var TYPES = { text: 'Text', photo: 'Photo', quote: 'Quote', link: 'Link', chat: 'Chat', audio: 'Audio', video: 'Video', answer: 'Answer' };
+
+      if (!posts.length) { panel.style.display = 'none'; return; }
+      if (mobile.matches) panel.open = false;
+
+      function esc(s) {
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      }
+      function norm(s) { return String(s).replace(/^#/, '').replace(/\s+/g, ' ').trim().toLowerCase(); }
+
+      /* --- Tags allowed by the "Filter Tags" theme option (empty = all) --- */
+      var allowed = null, allowedOrder = [];
+      var cfg = document.getElementById('filter-config');
+      if (cfg) {
+        cfg.textContent.split(',').forEach(function (raw) {
+          var label = raw.replace(/^\s*#/, '').replace(/\s+/g, ' ').trim();
+          var k = norm(label);
+          if (!k) return;
+          if (!allowed) allowed = {};
+          if (!allowed[k]) { allowed[k] = label; allowedOrder.push(k); }
+        });
+      }
+
+      /* --- Index the posts on this page --- */
+      var tagCount = {}, tagLabel = {}, tagUrl = {}, typeCount = {};
+      posts.forEach(function (post, i) {
+        post._i = i;
+        post._tags = [];
+        post._type = post.getAttribute('data-type') || 'text';
+        post._ts = parseInt(post.getAttribute('data-ts'), 10) || 0;
+        post._notes = parseInt(post.getAttribute('data-notes'), 10) || 0;
+        post._text = post.textContent.toLowerCase();
+        typeCount[post._type] = (typeCount[post._type] || 0) + 1;
+
+        [].forEach.call(post.querySelectorAll('.post-tags a'), function (a) {
+          var label = a.textContent.replace(/^#/, '').trim();
+          var k = norm(label);
+          if (!k || post._tags.indexOf(k) > -1) return;
+          post._tags.push(k);
+          tagCount[k] = (tagCount[k] || 0) + 1;
+          tagLabel[k] = label;
+          tagUrl[k] = a.getAttribute('data-tag') || encodeURIComponent(label);
+        });
+      });
+      if (allowed) allowedOrder.forEach(function (k) { if (!tagLabel[k]) tagLabel[k] = allowed[k]; });
+
+      /* --- Rows with Include / Exclude checkboxes --- */
+      function row(group, key, label, count, extra) {
+        var li = document.createElement('li');
+        if (extra) li.className = 'extra';
+        li.innerHTML =
+          '<input type="checkbox" class="cb-in" data-group="' + group + '" data-key="' + esc(key) + '" aria-label="Include ' + esc(label) + '">' +
+          '<input type="checkbox" class="cb-ex" data-group="' + group + '" data-key="' + esc(key) + '" aria-label="Exclude ' + esc(label) + '">' +
+          '<span class="f-label">' + esc(label) + ' <small>(' + count + ')</small></span>';
+        return li;
+      }
+
+      var typeKeys = Object.keys(typeCount).sort(function (a, b) { return typeCount[b] - typeCount[a]; });
+      var typeBox = document.getElementById('facet-type');
+      typeKeys.forEach(function (k) { typeBox.appendChild(row('type', k, TYPES[k] || k, typeCount[k])); });
+      if (typeKeys.length < 2) document.getElementById('fs-type').style.display = 'none';
+
+      /* Tag list: only the chosen tags (in the chosen order) or, if none chosen, every tag on the page */
+      var tagKeys = allowed
+        ? allowedOrder.filter(function (k) { return tagCount[k]; })
+        : Object.keys(tagCount).sort(function (a, b) { return tagCount[b] - tagCount[a] || a.localeCompare(b); });
+
+      var tagBox = document.getElementById('facet-tags');
+      var LIMIT = 10;
+      tagKeys.forEach(function (k, i) {
+        tagBox.appendChild(row('tag', k, '#' + tagLabel[k], tagCount[k], i >= LIMIT));
+      });
+      if (!tagKeys.length) document.getElementById('fs-tags').style.display = 'none';
+
+      /* The free-typing boxes only matter when there are more tags than the list shows */
+      if (tagKeys.length <= LIMIT) {
+        document.getElementById('fs-other-in').style.display = 'none';
+        document.getElementById('fs-other-ex').style.display = 'none';
+      }
+
+      var moreBtn = document.getElementById('more-tags');
+      if (tagKeys.length > LIMIT) {
+        moreBtn.hidden = false;
+        moreBtn.textContent = 'More tags (' + (tagKeys.length - LIMIT) + ')';
+        moreBtn.addEventListener('click', function () {
+          var open = tagBox.classList.toggle('expanded');
+          moreBtn.textContent = open ? 'Fewer tags' : 'More tags (' + (tagKeys.length - LIMIT) + ')';
+        });
+      }
+
+      /* Include and Exclude are mutually exclusive */
+      form.addEventListener('change', function (e) {
+        var t = e.target;
+        if (t.type !== 'checkbox' || !t.checked) return;
+        var other = t.parentNode.querySelector(t.classList.contains('cb-in') ? '.cb-ex' : '.cb-in');
+        if (other) other.checked = false;
+      });
+
+      /* --- Suggestions for the tag boxes --- */
+      var list = document.getElementById('tag-suggestions');
+      (allowed ? allowedOrder : tagKeys).forEach(function (k) {
+        var o = document.createElement('option');
+        o.value = tagLabel[k] || k;
+        list.appendChild(o);
+      });
+
+      /* --- "Other tags to include / exclude" (chips) --- */
+      var chipSets = { 'in': [], 'ex': [] };
+      var renderers = {};
+
+      function setupChips(mode) {
+        var box = document.getElementById('chips-' + mode);
+        var input = box.querySelector('input');
+
+        function render() {
+          [].slice.call(box.querySelectorAll('.chip')).forEach(function (c) { c.remove(); });
+          chipSets[mode].forEach(function (k) {
+            var c = document.createElement('span');
+            c.className = 'chip';
+            c.innerHTML = esc(tagLabel[k] || k) + '<button type="button" aria-label="Remove ' + esc(k) + '">×</button>';
+            c.querySelector('button').addEventListener('click', function () {
+              chipSets[mode] = chipSets[mode].filter(function (x) { return x !== k; });
+              render();
+            });
+            box.insertBefore(c, input);
+          });
+        }
+        function add() {
+          input.value.split(',').forEach(function (p) {
+            var k = norm(p);
+            if (!k) return;
+            if (allowed && !allowed[k]) return;               /* only tags chosen in the theme options */
+            if (!tagLabel[k]) tagLabel[k] = p.replace(/^\s*#/, '').trim();
+            if (chipSets[mode].indexOf(k) < 0) chipSets[mode].push(k);
+          });
+          input.value = '';
+          render();
+        }
+        input.addEventListener('keydown', function (e) {
+          if ((e.key === 'Enter' && input.value.trim()) || e.key === ',') {
+            e.preventDefault();
+            add();
+          } else if (e.key === 'Backspace' && !input.value && chipSets[mode].length) {
+            chipSets[mode].pop();
+            render();
+          }
+        });
+        input.addEventListener('change', add);
+        box.addEventListener('click', function () { input.focus(); });
+        renderers[mode] = { render: render, flush: add };
+      }
+      setupChips('in');
+      setupChips('ex');
+
+      /* --- Read the form state --- */
+      function getState() {
+        var s = { inT: [], exT: [], inTypes: [], exTypes: [], words: [], sort: document.getElementById('f-sort').value };
+        [].forEach.call(form.querySelectorAll('input.cb-in:checked'), function (cb) {
+          (cb.getAttribute('data-group') === 'type' ? s.inTypes : s.inT).push(cb.getAttribute('data-key'));
+        });
+        [].forEach.call(form.querySelectorAll('input.cb-ex:checked'), function (cb) {
+          (cb.getAttribute('data-group') === 'type' ? s.exTypes : s.exT).push(cb.getAttribute('data-key'));
+        });
+        chipSets['in'].forEach(function (k) { if (s.inT.indexOf(k) < 0) s.inT.push(k); });
+        chipSets['ex'].forEach(function (k) { if (s.exT.indexOf(k) < 0) s.exT.push(k); });
+        var q = norm(document.getElementById('f-q').value);
+        s.words = q ? q.split(' ') : [];
+        return s;
+      }
+
+      function matches(p, s) {
+        if (s.inTypes.length && s.inTypes.indexOf(p._type) < 0) return false;   /* types: any of them */
+        if (s.exTypes.indexOf(p._type) > -1) return false;
+        for (var i = 0; i < s.inT.length; i++) if (p._tags.indexOf(s.inT[i]) < 0) return false;  /* tags: all of them */
+        for (var j = 0; j < s.exT.length; j++) if (p._tags.indexOf(s.exT[j]) > -1) return false;
+        for (var w = 0; w < s.words.length; w++) if (p._text.indexOf(s.words[w]) < 0) return false;
+        return true;
+      }
+
+      /* --- Apply sorting + filters --- */
+      function apply() {
+        var s = getState();
+        var ordered = posts.slice();
+        if (s.sort === 'old') ordered.sort(function (a, b) { return a._ts - b._ts || a._i - b._i; });
+        else if (s.sort === 'notes') ordered.sort(function (a, b) { return b._notes - a._notes || a._i - b._i; });
+        else ordered.sort(function (a, b) { return a._i - b._i; });
+
+        var parent = posts[0].parentNode;
+        var shown = 0;
+        ordered.forEach(function (p) {
+          parent.insertBefore(p, pagination);
+          var ok = matches(p, s);
+          p.hidden = !ok;
+          if (ok) shown++;
+        });
+
+        var filtering = s.inT.length || s.exT.length || s.inTypes.length || s.exTypes.length || s.words.length;
+        if (!filtering && s.sort === 'new') { results.hidden = true; return; }
+
+        var html = shown
+          ? 'Showing <strong>' + shown + '</strong> of ' + posts.length + ' posts on this page'
+          : 'No posts on this page match these filters.';
+        if (s.inT.length === 1) {
+          var k = s.inT[0];
+          html += '<a href="/tagged/' + (tagUrl[k] || encodeURIComponent(k)) + '">See all posts tagged #' + esc(tagLabel[k] || k) + ' →</a>';
+        }
+        results.innerHTML = html;
+        results.hidden = false;
+      }
+
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        renderers['in'].flush();
+        renderers['ex'].flush();
+        apply();
+        if (mobile.matches) {
+          panel.open = false;
+          results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+
+      document.getElementById('f-clear').addEventListener('click', function () {
+        form.reset();
+        chipSets['in'] = [];
+        chipSets['ex'] = [];
+        renderers['in'].render();
+        renderers['ex'].render();
+        apply();
+      });
+    })();
+  </script>
+</body>
+</html>
